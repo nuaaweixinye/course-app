@@ -1,0 +1,165 @@
+<resources>
+    <string name="app_name">课表</string>
+
+    <!-- Main screen -->
+    <string name="tab_timetable">课表</string>
+    <string name="tab_tasks">任务</string>
+    <string name="tab_settings">设置</string>
+    <string name="action_settings">设置</string>
+    <string name="action_this_week">本周</string>
+    <string name="week_label">第 %1$d 周 / %2$d</string>
+    <string name="week_label_current">第 %1$d 周 · 本周</string>
+    <string name="week_input_hint">周次</string>
+    <string name="empty_timetable">本周没有课程，点击 + 添加</string>
+
+    <!-- Weekday headers -->
+    <string name="day_mon">一</string>
+    <string name="day_tue">二</string>
+    <string name="day_wed">三</string>
+    <string name="day_thu">四</string>
+    <string name="day_fri">五</string>
+    <string name="day_sat">六</string>
+    <string name="day_sun">日</string>
+
+    <!-- FAB -->
+    <string name="fab_add_course">添加课程</string>
+    <string name="fab_import">导入课表</string>
+
+    <string name="content_desc_previous_week">上一周</string>
+    <string name="content_desc_next_week">下一周</string>
+
+    <!-- Course detail / edit -->
+    <string name="header_sessions">上课时间</string>
+    <string name="empty_sessions">暂无上课时间，点击编辑添加</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_delete">删除</string>
+    <string name="action_save">保存</string>
+    <string name="action_cancel">取消</string>
+    <string name="dialog_delete_title">删除课程</string>
+    <string name="dialog_delete_message">确定删除「%1$s」及其全部时间？</string>
+    <string name="toast_course_deleted">已删除</string>
+    <string name="session_primary">周%1$s %2$d-%3$d 节</string>
+    <string name="session_secondary">%1$s · %2$s 周</string>
+
+    <!-- Course edit form -->
+    <string name="hint_course_name">课程名称</string>
+    <string name="hint_teacher">教师</string>
+    <string name="hint_location">教室</string>
+    <string name="hint_note">备注</string>
+    <string name="label_color">颜色</string>
+    <string name="label_sessions">时间安排</string>
+    <string name="label_day">星期</string>
+    <string name="label_periods">节次</string>
+    <string name="label_period_n">第 %1$d 节</string>
+    <string name="period_range">%1$s – %2$s</string>
+    <string name="label_week_pattern">周次</string>
+    <string name="action_add_session">+ 添加一个时段</string>
+    <string name="preset_all_weeks">全周 (1-%d)</string>
+    <string name="preset_odd_weeks">单周</string>
+    <string name="preset_even_weeks">双周</string>
+    <string name="err_name_required">请填写课程名称</string>
+    <string name="err_periods_invalid">节次结束需 ≥ 开始</string>
+    <string name="err_no_sessions">请至少添加一个时段</string>
+    <string name="toast_course_saved">已保存</string>
+
+    <!-- Tasks -->
+    <string name="empty_tasks">没有任务，点击 + 添加</string>
+    <string name="label_title">标题</string>
+    <string name="label_due_date">截止日期</string>
+    <string name="label_type">类型</string>
+    <string name="type_homework">作业</string>
+    <string name="type_exam">考试</string>
+    <string name="label_link_course">关联课程（可选）</string>
+    <string name="group_overdue">已过期</string>
+    <string name="group_today">今天</string>
+    <string name="group_upcoming">即将到来</string>
+    <string name="err_title_required">请填写标题</string>
+
+    <!-- Settings -->
+    <string name="header_semester">学期</string>
+    <string name="label_semester_start">学期开始日期（周一）</string>
+    <string name="label_total_weeks">总周数</string>
+    <string name="header_appearance">外观</string>
+    <string name="label_theme">主题</string>
+    <string name="theme_follow_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="header_periods">节次时间</string>
+    <string name="label_export">导出课表 (CSV)</string>
+    <string name="toast_exported">已导出到 %1$s</string>
+    <string name="toast_export_failed">导出失败</string>
+
+    <!-- Import -->
+    <string name="title_import">导入课表</string>
+    <string name="action_eams_import">从教务导入(NUAA)</string>
+    <string name="eams_login_hint">登录后点菜单「课表 → 个人课表」，看到课表后点右上「抓取」</string>
+    <string name="action_capture">抓取</string>
+    <string name="eams_loading">正在抓取课表…</string>
+    <string name="action_choose_file">选择文件</string>
+    <string name="action_confirm_import">确认导入</string>
+    <string name="import_hint">支持 .csv / .ics / NUAA课表网页(.html)</string>
+    <string name="import_preview_count">识别到 %1$d 门课程</string>
+    <string name="err_import_parse">解析失败，请检查文件格式</string>
+    <string name="err_import_unsupported">暂不支持该格式，请使用 .csv 或 .ics</string>
+
+    <!-- Week exceptions -->
+    <string name="header_exceptions">周次例外（调休/停课）</string>
+    <string name="action_add_exception">+ 添加例外</string>
+    <string name="exception_cancel_week">第 %1$d 周停课</string>
+    <string name="exception_move_week">第 %1$d 周 调至 周%2$s</string>
+    <string name="type_cancel">停课</string>
+    <string name="type_move">调换</string>
+
+    <!-- Semester management -->
+    <string name="title_semester_manage">学期管理</string>
+    <string name="action_add_semester">+ 新建学期</string>
+    <string name="dialog_semester_name">学期名称</string>
+    <string name="dialog_delete_semester">确定删除「%1$s」及其所有课程？</string>
+    <string name="toast_semester_created">已创建</string>
+    <string name="toast_semester_deleted">已删除</string>
+    <string name="toast_semester_renamed">已重命名</string>
+    <string name="label_active">当前学期</string>
+
+    <!-- Batch operations -->
+    <string name="batch_move">移入</string>
+    <string name="batch_cancel">停课</string>
+    <string name="batch_delete">删除</string>
+    <string name="content_desc_close">关闭</string>
+    <string name="selection_count">已选择 %d 项</string>
+    <string name="confirm_batch_delete">确定要删除所选课程及其所有排课？</string>
+    <string name="batch_move_title">选择目标学期</string>
+    <string name="batch_cancel_unavailable">批量停课功能暂不可用，请逐个操作</string>
+    <string name="toast_batch_moved">已移入目标学期</string>
+    <string name="filter_all">全部</string>
+    <string name="profiles_label">标签：%1$s</string>
+    <string name="exception_cancel_count">停课 %1$d 次</string>
+    <string name="exception_move_count">调换 %1$d 次</string>
+    <string name="action_set_active">设为当前学期</string>
+    <string name="label_start_date">开学日期</string>
+    <string name="toast_semester_activated">已切换为当前学期</string>
+    <string name="toast_semester_updated">已更新</string>
+    <string name="timetable_label">课表：%1$s</string>
+    <string name="header_semester_manage">学期管理</string>
+    <string name="header_timetable_manage">课表管理</string>
+    <string name="action_add_timetable">+ 新建课表</string>
+    <string name="dialog_timetable_name">课表名称</string>
+    <string name="dialog_rename">重命名</string>
+    <string name="toast_timetable_created">已创建课表</string>
+    <string name="toast_timetable_deleted">已删除课表</string>
+    <string name="toast_timetable_updated">课表已更新</string>
+    <string name="dialog_delete_timetable">确定删除课表「%1$s」？</string>
+    <string name="label_timetable">课表</string>
+    <string name="timetable_none">无课表</string>
+    <string name="action_set_active_timetable">设为当前</string>
+    <string name="toast_timetable_activated">已设为当前课表</string>
+    <string name="timetable_unassigned">未分配</string>
+    <string name="import_create_timetable">导入为「%1$s」</string>
+    <string name="toast_imported">已导入 %2$d 门课程到「%1$s」</string>
+    <string name="action_view_timetable">查看课表</string>
+    <string name="timetable_course_list_title">%1$s - 课程列表</string>
+    <string name="empty_courses">暂无课程</string>
+    <string name="timetable_import_default">导入课表</string>
+    <string name="action_import_help">导入帮助</string>
+    <string name="dialog_import_help_title">从南航教务处导入课程</string>
+    <string name="dialog_import_help_message">1. 在浏览器中打开南京航空航天大学教务系统（EAMS）并登录\n\n2. 进入「个人课表」页面\n\n3. 点击页面上的「打印」按钮\n\n4. 在打印对话框中选择「导出为 Excel（.xls）」并保存文件\n\n5. 返回本应用，进入「设置→课表管理」，点击工具栏的导入按钮\n\n6. 选择刚才保存的 Excel 文件即可自动解析导入</string>
+</resources>

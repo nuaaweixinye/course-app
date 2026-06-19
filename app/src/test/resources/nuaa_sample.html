@@ -1,0 +1,93 @@
+<script language="JavaScript">
+    var language = "zh";
+    var table0 = new CourseTable(2026,91);
+    var unitCount = 13;
+    var index=0;
+    var activity=null;
+    var teachers = [{id:2751,name:"王立松",lab:false}];
+    var actTeachers = [{id:2751,name:"王立松",lab:false}];
+    var assistant = _.filter(actTeachers, function(actTeacher) {
+        return (_.where(teachers, {id:actTeacher.id,name:actTeacher.name,lab:actTeacher.lab}).length == 0) && (actTeacher.lab == true);
+    });
+    var assistantName = "";
+    var actTeacherId = [];
+    var actTeacherName = [];
+    for (var i = 0; i < actTeachers.length; i++) {
+        actTeacherId.push(actTeachers[i].id);
+        actTeacherName.push(actTeachers[i].name);
+    }
+
+    activity = new TaskActivity(
+        actTeacherId.join(','),
+        actTeacherName.join(','),
+        "26171",
+        "操作系统",
+        "",
+        "790",
+        "D1113(将军路)",
+        "00111111111111000000000000000000000000000000000000000",
+        "424821",
+        null,
+        assistantName,
+        "",
+        "",
+        "1623101 1623102 1623103 1623104;1623105");
+    index =0*unitCount+0;
+    table0.activities[index][table0.activities[index].length]=activity;
+    index =0*unitCount+1;
+    table0.activities[index][table0.activities[index].length]=activity;
+    var teachers = [{id:432,name:"顾晶晶",lab:false}];
+    var actTeachers = [{id:432,name:"顾晶晶",lab:false}];
+    var assistantName = "";
+    var actTeacherId = [];
+    var actTeacherName = [];
+    for (var i = 0; i < actTeachers.length; i++) {
+        actTeacherId.push(actTeachers[i].id);
+        actTeacherName.push(actTeachers[i].name);
+    }
+
+    activity = new TaskActivity(
+        actTeacherId.join(','),
+        actTeacherName.join(','),
+        "6717",
+        "计算机系统结构",
+        "",
+        "888",
+        "D3102(将军路)",
+        "01111111111110000000000000000000000000000000000000000",
+        "423199",
+        null,
+        assistantName,
+        "",
+        "",
+        "1623001 1623101");
+    index =1*unitCount+2;
+    table0.activities[index][table0.activities[index].length]=activity;
+    index =1*unitCount+3;
+    table0.activities[index][table0.activities[index].length]=activity;
+    var teachers = [{id:2751,name:"王立松",lab:false}];
+    var actTeachers = [{id:2751,name:"王立松",lab:false}];
+    var assistantName = "";
+
+    activity = new TaskActivity(
+        actTeacherId.join(','),
+        actTeacherName.join(','),
+        "26171",
+        "操作系统",
+        "",
+        "790",
+        "D1113(将军路)",
+        "00111111011111000000000000000000000000000000000000000",
+        "424821",
+        null,
+        assistantName,
+        "",
+        "",
+        "1623101");
+    index =2*unitCount+6;
+    table0.activities[index][table0.activities[index].length]=activity;
+    index =2*unitCount+7;
+    table0.activities[index][table0.activities[index].length]=activity;
+    table0.marshalTable(2,1,19);
+    fillTable(table0,7,13,0);
+</script>

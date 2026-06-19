@@ -1,0 +1,21 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Android (Java 11), Gradle Kotlin DSL, Material Components 1.13 (M3-ready),
+    ViewBinding, Room, ViewModel/LiveData, Multi-Activity MVVM, Repository pattern.
+  minSdk 31, targetSdk 36, compileSdk 36. Package: com.courseshedule.
+  Language: NO Kotlin (project is Java-only). Use XML layouts, not Jetpack Compose.
+  Domain: Chinese university course-schedule (课表) app.
+  No DI framework (manual construction). No Hilt/Dagger.
+
+rules:
+  proposal:
+    - Keep proposals under 400 words
+    - Always include a "Non-goals" section
+  design:
+    - Reference the design doc at docs/superpowers/specs/ when relevant
+    - Keep technical decisions aligned with the approved brainstorming design
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Order tasks by dependency (infra/data/UI/import/settings/tasks/exceptions/widget/polish)
+    - Each task must be independently verifiable

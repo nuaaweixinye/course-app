@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="surface_dark">#FF1F2937</color>
+    <color name="surface_variant_dark">#FF374151</color>
+    <color name="outline_dark">#FF374151</color>
+    <color name="text_primary_dark">#FFF9FAFB</color>
+    <color name="text_secondary_dark">#FFD1D5DB</color>
+    <color name="text_disabled_dark">#FF6B7280</color>
+</resources>

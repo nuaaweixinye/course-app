@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="exception_types">
+        <item>@string/type_cancel</item>
+        <item>@string/type_move</item>
+    </string-array>
+</resources>

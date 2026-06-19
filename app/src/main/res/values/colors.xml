@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand accent (indigo) -->
+    <color name="brand_indigo">#FF4F46E5</color>
+    <color name="brand_indigo_container">#FFE0E7FF</color>
+    <color name="brand_indigo_container_dark">#FF3730A3</color>
+
+    <!-- Course-card palette (8 colors). Indexed by CourseEntity.colorTag 0..7 -->
+    <color name="course_0">#FF6366F1</color> <!-- 靛蓝 -->
+    <color name="course_1">#FF10B981</color> <!-- 翠绿 -->
+    <color name="course_2">#FFF59E0B</color> <!-- 琥珀 -->
+    <color name="course_3">#FFEF4444</color> <!-- 红 -->
+    <color name="course_4">#FF8B5CF6</color> <!-- 紫 -->
+    <color name="course_5">#FF06B6D4</color> <!-- 青 -->
+    <color name="course_6">#FFEC4899</color> <!-- 粉 -->
+    <color name="course_7">#FF84CC16</color> <!-- 黄绿 -->
+
+    <!-- Neutrals (light) -->
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="surface_variant_light">#FFFAFAFA</color>
+    <color name="outline_light">#FFF3F4F6</color>
+    <color name="text_primary_light">#FF1F2937</color>
+    <color name="text_secondary_light">#FF6B7280</color>
+    <color name="text_disabled_light">#FF9CA3AF</color>
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Dark-neutral fallback declarations (overridden in values-night). -->
+    <color name="surface_dark">#FF1F2937</color>
+    <color name="surface_variant_dark">#FF374151</color>
+    <color name="outline_dark">#FF374151</color>
+    <color name="text_primary_dark">#FFF9FAFB</color>
+    <color name="text_secondary_dark">#FFD1D5DB</color>
+    <color name="text_disabled_dark">#FF6B7280</color>
+</resources>

@@ -1,0 +1,18 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme: Material 3, DayNight (dark mode follows system by default). -->
+    <style name="Theme.CourseShedule" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_indigo</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/brand_indigo_container</item>
+        <item name="colorOnPrimaryContainer">@color/brand_indigo</item>
+
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="colorOnSurface">@color/text_primary_light</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary_light</item>
+        <item name="colorOutline">@color/outline_light</item>
+
+        <!-- Status bar matches the surface for a clean edge-to-edge feel. -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+    </style>
+</resources>

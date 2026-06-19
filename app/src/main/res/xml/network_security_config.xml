@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NUAA's 教务/CAS redirects some requests to plain HTTP. Permit cleartext only
+     for nuaa.edu.cn (and subdomains) so the WebView login flow can complete. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">nuaa.edu.cn</domain>
+    </domain-config>
+</network-security-config>
