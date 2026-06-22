@@ -28,7 +28,9 @@ import com.courseshedule.data.imports.ParsedCourse;
 import com.courseshedule.data.local.AppDatabase;
 import com.courseshedule.data.local.entity.CourseEntity;
 import com.courseshedule.data.local.entity.CourseSessionEntity;
+import com.courseshedule.data.local.entity.SemesterEntity;
 import com.courseshedule.data.local.entity.TimetableEntity;
+import com.courseshedule.data.model.TimetableWithSemester;
 import com.courseshedule.data.repository.CourseRepository;
 import com.courseshedule.data.repository.SemesterRepository;
 import com.courseshedule.data.repository.TimetableRepository;
@@ -48,8 +50,10 @@ public class TimetableManageActivity extends AppCompatActivity {
     private ActivityTimetableManageBinding binding;
     private TimetableRepository repository;
     private CourseRepository courseRepository;
-    private long semesterId;
+    private SemesterRepository semesterRepository;
     private String periodTimesJson;
+    private List<SemesterEntity> spinnerSemesters;
+    private Long pendingImportTimetableId;
 
     private final ActivityResultLauncher<String[]> openFileLauncher =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onFileChosen);
@@ -60,33 +64,30 @@ public class TimetableManageActivity extends AppCompatActivity {
         binding = ActivityTimetableManageBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        semesterId = getIntent().getLongExtra(EXTRA_SEMESTER_ID, -1L);
-        String semesterName = getIntent().getStringExtra(EXTRA_SEMESTER_NAME);
-        if (semesterId < 0) { finish(); return; }
-
         AppDatabase db = ((App) getApplication()).getDatabase();
         repository = new TimetableRepository(db);
         courseRepository = new CourseRepository(db);
-        periodTimesJson = new SemesterRepository(db).getCachedOrDefault().periodTimesJson;
+        semesterRepository = new SemesterRepository(db);
+        periodTimesJson = semesterRepository.getCachedOrDefault().periodTimesJson;
 
         binding.toolbar.setNavigationOnClickListener(v -> finish());
-        if (semesterName != null) {
-            binding.toolbar.setTitle(getString(R.string.header_timetable_manage) + " - " + semesterName);
-        }
         binding.toolbar.inflateMenu(R.menu.timetable_manage_menu);
         binding.toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_import) {
-                openFileLauncher.launch(new String[]{"*/*"});
+                onStartImport();
                 return true;
             }
             return false;
         });
         binding.btnAddTimetable.setOnClickListener(v -> promptCreate());
 
-        repository.observeBySemester(semesterId).observe(this, timetables -> {
+        repository.observeAllWithSemester().observe(this, timetables -> {
             binding.timetableList.setLayoutManager(new LinearLayoutManager(this));
             binding.timetableList.setAdapter(new TimetableAdapter(timetables, this::onItemClick));
         });
+
+        semesterRepository.observeAll().observe(this, semesters ->
+                spinnerSemesters = semesters);
     }
 
     private void onFileChosen(Uri uri) {
@@ -137,33 +138,112 @@ public class TimetableManageActivity extends AppCompatActivity {
     }
 
     private void confirmImport(String name, List<ParsedCourse> courses) {
-        repository.create(name, semesterId, timetableId -> {
-            int count = 0;
-            for (ParsedCourse c : courses) {
-                CourseEntity course = new CourseEntity();
-                course.name = c.name;
-                course.teacher = c.teacher == null ? "" : c.teacher;
-                course.colorTag = ColorPalette.defaultTag(count);
-                course.semesterId = semesterId;
-                course.timetableId = timetableId;
-                List<CourseSessionEntity> sessions = new ArrayList<>();
-                for (com.courseshedule.data.imports.ParsedSession ps : c.sessions) {
-                    CourseSessionEntity s = new CourseSessionEntity();
-                    s.dayOfWeek = ps.dayOfWeek;
-                    s.startPeriod = ps.startPeriod;
-                    s.endPeriod = ps.endPeriod;
-                    s.location = ps.location == null ? "" : ps.location;
-                    s.weekPattern = ps.weekPattern == null ? "1-16" : ps.weekPattern;
-                    sessions.add(s);
-                }
-                courseRepository.saveCourse(course, sessions, null);
-                count++;
+        if (pendingImportTimetableId == null) {
+            Toast.makeText(this, R.string.err_import_parse, Toast.LENGTH_LONG).show();
+            return;
+        }
+        new Thread(() -> {
+            AppDatabase db = ((App) getApplication()).getDatabase();
+            TimetableEntity tt = db.timetableDao().getById(pendingImportTimetableId);
+            if (tt == null) {
+                runOnUiThread(() -> Toast.makeText(this, R.string.err_import_parse, Toast.LENGTH_LONG).show());
+                return;
             }
+            int count = saveCourses(courses, tt.id, tt.semesterId);
             final int finalCount = count;
-            runOnUiThread(() -> {
-                Toast.makeText(this, getString(R.string.toast_imported, name, finalCount), Toast.LENGTH_SHORT).show();
-            });
-        });
+            runOnUiThread(() ->
+                    Toast.makeText(this, getString(R.string.toast_imported, tt.name, finalCount), Toast.LENGTH_SHORT).show());
+        }).start();
+    }
+
+    private void onStartImport() {
+        new Thread(() -> {
+            List<TimetableWithSemester> all = repository.listAllWithSemester();
+            runOnUiThread(() -> showImportTimetablePicker(all));
+        }).start();
+    }
+
+    private void showImportTimetablePicker(List<TimetableWithSemester> timetables) {
+        String[] items = new String[timetables.size() + 1];
+        items[0] = getString(R.string.import_create_new);
+        for (int i = 0; i < timetables.size(); i++) {
+            TimetableWithSemester tt = timetables.get(i);
+            items[i + 1] = tt.name + " (" + tt.semesterName + ")";
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_select_target_timetable)
+                .setItems(items, (d, which) -> {
+                    if (which == 0) {
+                        promptCreateForImport();
+                    } else {
+                        pendingImportTimetableId = timetables.get(which - 1).id;
+                        openFileLauncher.launch(new String[]{"*/*"});
+                    }
+                })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private void promptCreateForImport() {
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_timetable_create, null);
+        android.widget.Spinner spinSemester = view.findViewById(R.id.spinSemester);
+        EditText etName = view.findViewById(R.id.etTimetableName);
+
+        if (spinnerSemesters == null || spinnerSemesters.isEmpty()) {
+            Toast.makeText(this, R.string.toast_no_semester, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] names = new String[spinnerSemesters.size()];
+        int activePos = 0;
+        for (int i = 0; i < spinnerSemesters.size(); i++) {
+            names[i] = spinnerSemesters.get(i).name;
+            if (spinnerSemesters.get(i).isActive) activePos = i;
+        }
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, names);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinSemester.setAdapter(adapter);
+        spinSemester.setSelection(activePos);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.action_add_timetable)
+                .setView(view)
+                .setPositiveButton(R.string.action_save, (d, w) -> {
+                    String name = etName.getText().toString().trim();
+                    if (name.isEmpty()) return;
+                    long semId = spinnerSemesters.get(spinSemester.getSelectedItemPosition()).id;
+                    repository.create(name, semId, id -> {
+                        pendingImportTimetableId = id;
+                        runOnUiThread(() -> openFileLauncher.launch(new String[]{"*/*"}));
+                    });
+                })
+                .setNegativeButton(R.string.action_cancel, null)
+                .show();
+    }
+
+    private int saveCourses(List<ParsedCourse> courses, long timetableId, long semesterId) {
+        int count = 0;
+        for (ParsedCourse c : courses) {
+            CourseEntity course = new CourseEntity();
+            course.name = c.name;
+            course.teacher = c.teacher == null ? "" : c.teacher;
+            course.colorTag = ColorPalette.defaultTag(count);
+            course.semesterId = semesterId;
+            course.timetableId = timetableId;
+            List<CourseSessionEntity> sessions = new ArrayList<>();
+            for (com.courseshedule.data.imports.ParsedSession ps : c.sessions) {
+                CourseSessionEntity s = new CourseSessionEntity();
+                s.dayOfWeek = ps.dayOfWeek;
+                s.startPeriod = ps.startPeriod;
+                s.endPeriod = ps.endPeriod;
+                s.location = ps.location == null ? "" : ps.location;
+                s.weekPattern = ps.weekPattern == null ? "1-16" : ps.weekPattern;
+                sessions.add(s);
+            }
+            courseRepository.saveCourse(course, sessions, null);
+            count++;
+        }
+        return count;
     }
 
     private String queryDisplayName(Uri uri) {
@@ -212,58 +292,75 @@ public class TimetableManageActivity extends AppCompatActivity {
         }
     }
 
-    private void onItemClick(TimetableEntity tt) {
+    private TimetableEntity toEntity(TimetableWithSemester tt) {
+        TimetableEntity e = new TimetableEntity();
+        e.id = tt.id;
+        e.name = tt.name;
+        e.semesterId = tt.semesterId;
+        e.isActive = tt.isActive;
+        return e;
+    }
+
+    private void onItemClick(TimetableWithSemester tt) {
         String[] items;
-        int activeActionIndex, viewActionIndex, renameActionIndex, deleteActionIndex;
+        int activeActionIndex, addCourseIndex, viewActionIndex, renameActionIndex, deleteActionIndex;
         if (tt.isActive) {
             items = new String[]{
+                    getString(R.string.dialog_add_course),
                     getString(R.string.action_view_timetable),
                     getString(R.string.dialog_rename),
                     getString(R.string.action_delete)
             };
-            viewActionIndex = 0;
-            renameActionIndex = 1;
-            deleteActionIndex = 2;
-            new AlertDialog.Builder(this)
-                    .setTitle(tt.name)
-                    .setItems(items, (d, which) -> {
-                        if (which == viewActionIndex) viewTimetable(tt);
-                        else if (which == renameActionIndex) promptRename(tt);
-                        else promptDelete(tt);
-                    })
-                    .setNegativeButton(R.string.action_cancel, null)
-                    .show();
-        } else {
-            items = new String[]{
-                    getString(R.string.action_set_active_timetable),
-                    getString(R.string.action_view_timetable),
-                    getString(R.string.dialog_rename),
-                    getString(R.string.action_delete)
-            };
-            activeActionIndex = 0;
+            addCourseIndex = 0;
             viewActionIndex = 1;
             renameActionIndex = 2;
             deleteActionIndex = 3;
             new AlertDialog.Builder(this)
                     .setTitle(tt.name)
                     .setItems(items, (d, which) -> {
+                        if (which == addCourseIndex) addCourseToTimetable(tt);
+                        else if (which == viewActionIndex) viewTimetable(tt);
+                        else if (which == renameActionIndex) promptRename(toEntity(tt));
+                        else promptDelete(toEntity(tt));
+                    })
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .show();
+        } else {
+            items = new String[]{
+                    getString(R.string.action_set_active_timetable),
+                    getString(R.string.dialog_add_course),
+                    getString(R.string.action_view_timetable),
+                    getString(R.string.dialog_rename),
+                    getString(R.string.action_delete)
+            };
+            activeActionIndex = 0;
+            addCourseIndex = 1;
+            viewActionIndex = 2;
+            renameActionIndex = 3;
+            deleteActionIndex = 4;
+            new AlertDialog.Builder(this)
+                    .setTitle(tt.name)
+                    .setItems(items, (d, which) -> {
                         if (which == activeActionIndex) {
                             repository.switchTo(tt.id, tt.semesterId);
                             Toast.makeText(this, R.string.toast_timetable_activated, Toast.LENGTH_SHORT).show();
-                        } else if (which == viewActionIndex) {
-                            viewTimetable(tt);
-                        } else if (which == renameActionIndex) {
-                            promptRename(tt);
-                        } else {
-                            promptDelete(tt);
-                        }
+                        } else if (which == addCourseIndex) addCourseToTimetable(tt);
+                        else if (which == viewActionIndex) viewTimetable(tt);
+                        else if (which == renameActionIndex) promptRename(toEntity(tt));
+                        else promptDelete(toEntity(tt));
                     })
                     .setNegativeButton(R.string.action_cancel, null)
                     .show();
         }
     }
 
-    private void viewTimetable(TimetableEntity tt) {
+    private void addCourseToTimetable(TimetableWithSemester tt) {
+        Intent intent = new Intent(this, com.courseshedule.ui.course.CourseEditActivity.class);
+        intent.putExtra(com.courseshedule.ui.course.CourseEditActivity.EXTRA_TIMETABLE_ID, tt.id);
+        startActivity(intent);
+    }
+
+    private void viewTimetable(TimetableWithSemester tt) {
         Intent intent = new Intent(this, TimetableCourseListActivity.class);
         intent.putExtra(TimetableCourseListActivity.EXTRA_TIMETABLE_ID, tt.id);
         intent.putExtra(TimetableCourseListActivity.EXTRA_TIMETABLE_NAME, tt.name);
@@ -271,15 +368,34 @@ public class TimetableManageActivity extends AppCompatActivity {
     }
 
     private void promptCreate() {
-        EditText input = new EditText(this);
-        input.setHint(R.string.dialog_timetable_name);
+        View view = LayoutInflater.from(this).inflate(R.layout.dialog_timetable_create, null);
+        android.widget.Spinner spinSemester = view.findViewById(R.id.spinSemester);
+        EditText etName = view.findViewById(R.id.etTimetableName);
+
+        if (spinnerSemesters == null || spinnerSemesters.isEmpty()) {
+            Toast.makeText(this, R.string.toast_no_semester, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] names = new String[spinnerSemesters.size()];
+        int activePos = 0;
+        for (int i = 0; i < spinnerSemesters.size(); i++) {
+            names[i] = spinnerSemesters.get(i).name;
+            if (spinnerSemesters.get(i).isActive) activePos = i;
+        }
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, names);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinSemester.setAdapter(adapter);
+        spinSemester.setSelection(activePos);
+
         new AlertDialog.Builder(this)
                 .setTitle(R.string.action_add_timetable)
-                .setView(input)
+                .setView(view)
                 .setPositiveButton(R.string.action_save, (d, w) -> {
-                    String name = input.getText().toString().trim();
+                    String name = etName.getText().toString().trim();
                     if (name.isEmpty()) return;
-                    repository.create(name, semesterId, id ->
+                    long semId = spinnerSemesters.get(spinSemester.getSelectedItemPosition()).id;
+                    repository.create(name, semId, id ->
                             Toast.makeText(this, R.string.toast_timetable_created, Toast.LENGTH_SHORT).show());
                 })
                 .setNegativeButton(R.string.action_cancel, null)
@@ -317,12 +433,12 @@ public class TimetableManageActivity extends AppCompatActivity {
     }
 
     private static class TimetableAdapter extends RecyclerView.Adapter<TimetableAdapter.ViewHolder> {
-        private final List<TimetableEntity> list;
+        private final List<TimetableWithSemester> list;
         private final OnItemClick listener;
 
-        interface OnItemClick { void onItemClick(TimetableEntity tt); }
+        interface OnItemClick { void onItemClick(TimetableWithSemester tt); }
 
-        TimetableAdapter(List<TimetableEntity> list, OnItemClick listener) {
+        TimetableAdapter(List<TimetableWithSemester> list, OnItemClick listener) {
             this.list = list;
             this.listener = listener;
         }
@@ -336,18 +452,20 @@ public class TimetableManageActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder h, int i) {
-            TimetableEntity tt = list.get(i);
+            TimetableWithSemester tt = list.get(i);
             h.tvName.setText((tt.isActive ? "\u2713 " : "") + tt.name);
+            h.tvSemester.setText(tt.semesterName);
             h.itemView.setOnClickListener(v -> listener.onItemClick(tt));
         }
 
-        @Override public int getItemCount() { return list.size(); }
+        @Override public int getItemCount() { return list == null ? 0 : list.size(); }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName;
+            TextView tvName, tvSemester;
             ViewHolder(@NonNull View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tvTimetableName);
+                tvSemester = v.findViewById(R.id.tvSemesterName);
             }
         }
     }

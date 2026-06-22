@@ -2,9 +2,22 @@ package com.courseshedule.data.local.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "timetables")
+import static androidx.room.ForeignKey.CASCADE;
+
+@Entity(
+        tableName = "timetables",
+        foreignKeys = @ForeignKey(
+                entity = SemesterEntity.class,
+                parentColumns = "id",
+                childColumns = "semesterId",
+                onDelete = CASCADE
+        ),
+        indices = {@Index("semesterId")}
+)
 public class TimetableEntity {
 
     @PrimaryKey(autoGenerate = true)

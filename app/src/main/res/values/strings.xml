@@ -10,6 +10,8 @@
     <string name="week_label">第 %1$d 周 / %2$d</string>
     <string name="week_label_current">第 %1$d 周 · 本周</string>
     <string name="week_input_hint">周次</string>
+    <string name="dialog_select_week">选择周次</string>
+    <string name="label_this_week_suffix">(本周)</string>
     <string name="empty_timetable">本周没有课程，点击 + 添加</string>
 
     <!-- Weekday headers -->
@@ -57,10 +59,16 @@
     <string name="preset_all_weeks">全周 (1-%d)</string>
     <string name="preset_odd_weeks">单周</string>
     <string name="preset_even_weeks">双周</string>
+    <string name="preset_custom_weeks">自选周次</string>
+    <string name="dialog_select_weeks">选择周次</string>
     <string name="err_name_required">请填写课程名称</string>
     <string name="err_periods_invalid">节次结束需 ≥ 开始</string>
+    <string name="err_periods_out_of_range">节次需在 1–12 范围内</string>
     <string name="err_no_sessions">请至少添加一个时段</string>
     <string name="toast_course_saved">已保存</string>
+    <string name="err_no_timetable">请先选择课表</string>
+    <string name="hint_create_timetable_first">请先创建课表</string>
+    <string name="dialog_add_course">添加课程</string>
 
     <!-- Tasks -->
     <string name="empty_tasks">没有任务，点击 + 添加</string>
@@ -119,6 +127,7 @@
     <string name="toast_semester_deleted">已删除</string>
     <string name="toast_semester_renamed">已重命名</string>
     <string name="label_active">当前学期</string>
+    <string name="label_select_semester">选择学期</string>
 
     <!-- Batch operations -->
     <string name="batch_move">移入</string>
@@ -145,6 +154,7 @@
     <string name="dialog_timetable_name">课表名称</string>
     <string name="dialog_rename">重命名</string>
     <string name="toast_timetable_created">已创建课表</string>
+    <string name="toast_no_semester">请先创建学期</string>
     <string name="toast_timetable_deleted">已删除课表</string>
     <string name="toast_timetable_updated">课表已更新</string>
     <string name="dialog_delete_timetable">确定删除课表「%1$s」？</string>
@@ -153,12 +163,15 @@
     <string name="action_set_active_timetable">设为当前</string>
     <string name="toast_timetable_activated">已设为当前课表</string>
     <string name="timetable_unassigned">未分配</string>
+    <string name="no_active_timetable">没有课表</string>
     <string name="import_create_timetable">导入为「%1$s」</string>
     <string name="toast_imported">已导入 %2$d 门课程到「%1$s」</string>
     <string name="action_view_timetable">查看课表</string>
     <string name="timetable_course_list_title">%1$s - 课程列表</string>
     <string name="empty_courses">暂无课程</string>
     <string name="timetable_import_default">导入课表</string>
+    <string name="dialog_select_target_timetable">选择目标课表</string>
+    <string name="import_create_new">创建新课表</string>
     <string name="action_import_help">导入帮助</string>
     <string name="dialog_import_help_title">从南航教务处导入课程</string>
     <string name="dialog_import_help_message">1. 在浏览器中打开南京航空航天大学教务系统（EAMS）并登录\n\n2. 进入「个人课表」页面\n\n3. 点击页面上的「打印」按钮\n\n4. 在打印对话框中选择「导出为 Excel（.xls）」并保存文件\n\n5. 返回本应用，进入「设置→课表管理」，点击工具栏的导入按钮\n\n6. 选择刚才保存的 Excel 文件即可自动解析导入</string>

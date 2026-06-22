@@ -85,7 +85,7 @@ public class TodayWidgetFactory implements RemoteViewsService.RemoteViewsFactory
 
     private List<DisplaySession> queryTodayRemaining() {
         SemesterEntity cfg = new com.courseshedule.data.repository.SemesterRepository(db)
-                .getSeedingDefault();
+                .getCachedOrDefault();
         int weekNo = WeekUtils.currentWeek(cfg.startDate, cfg.totalWeeks,
                 System.currentTimeMillis());
         List<PeriodTime> periods = PeriodUtils.parse(cfg.periodTimesJson);

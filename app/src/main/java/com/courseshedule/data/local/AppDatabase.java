@@ -31,7 +31,7 @@ import com.courseshedule.data.local.entity.TimetableEntity;
                 SemesterEntity.class,
                 TimetableEntity.class
         },
-        version = 5,
+        version = 7,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -176,6 +176,49 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    static final Migration MIGRATION_5_6 = new Migration(5, 6) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // Delete orphaned courses (timetableId points to non-existent timetable)
+            db.execSQL("DELETE FROM courses WHERE timetableId IS NOT NULL AND timetableId NOT IN (SELECT id FROM timetables)");
+            // Recreate courses table with FK CASCADE on timetableId
+            db.execSQL("CREATE TABLE IF NOT EXISTS `courses_new` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`name` TEXT, " +
+                    "`teacher` TEXT, " +
+                    "`colorTag` INTEGER NOT NULL, " +
+                    "`note` TEXT, " +
+                    "`semesterId` INTEGER NOT NULL, " +
+                    "`timetableId` INTEGER, " +
+                    "FOREIGN KEY (`timetableId`) REFERENCES `timetables`(`id`) ON DELETE CASCADE" +
+                    ")");
+            db.execSQL("INSERT INTO courses_new SELECT * FROM courses");
+            db.execSQL("DROP TABLE courses");
+            db.execSQL("ALTER TABLE courses_new RENAME TO courses");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_courses_timetableId ON courses(timetableId)");
+        }
+    };
+
+    static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(@NonNull SupportSQLiteDatabase db) {
+            // Delete orphaned timetables (semesterId points to non-existent semester)
+            db.execSQL("DELETE FROM timetables WHERE semesterId NOT IN (SELECT id FROM semesters)");
+            // Recreate timetables table with FK CASCADE on semesterId
+            db.execSQL("CREATE TABLE IF NOT EXISTS `timetables_new` (" +
+                    "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`name` TEXT, " +
+                    "`semesterId` INTEGER NOT NULL, " +
+                    "`isActive` INTEGER NOT NULL DEFAULT 0, " +
+                    "FOREIGN KEY (`semesterId`) REFERENCES `semesters`(`id`) ON DELETE CASCADE" +
+                    ")");
+            db.execSQL("INSERT INTO timetables_new SELECT * FROM timetables");
+            db.execSQL("DROP TABLE timetables");
+            db.execSQL("ALTER TABLE timetables_new RENAME TO timetables");
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_timetables_semesterId ON timetables(semesterId)");
+        }
+    };
+
     public static AppDatabase get(Context context) {
         if (INSTANCE == null) {
             synchronized (AppDatabase.class) {
@@ -185,7 +228,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "course_shedule.db"
                             )
-                            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                             .build();
                 }
             }

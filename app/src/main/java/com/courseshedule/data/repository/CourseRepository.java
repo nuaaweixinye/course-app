@@ -2,6 +2,7 @@ package com.courseshedule.data.repository;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.courseshedule.data.local.AppDatabase;
 import com.courseshedule.data.local.dao.CourseDao;
@@ -33,7 +34,7 @@ public class CourseRepository {
     private final MediatorLiveData<List<CourseEntity>> observableCourses = new MediatorLiveData<>();
     private LiveData<List<CourseEntity>> currentCourseSource;
     private volatile long activeSemesterId = 1;
-    private volatile Long activeTimetableId = null;
+    private final MutableLiveData<Long> activeTimetableId = new MutableLiveData<>(null);
 
     public CourseRepository(AppDatabase db) {
         this.db = db;
@@ -50,11 +51,11 @@ public class CourseRepository {
     }
 
     public void setActiveTimetableId(Long timetableId) {
-        this.activeTimetableId = timetableId;
+        this.activeTimetableId.setValue(timetableId);
         refreshCourseSource();
     }
 
-    public Long getActiveTimetableId() {
+    public LiveData<Long> getActiveTimetableId() {
         return activeTimetableId;
     }
 
@@ -62,8 +63,9 @@ public class CourseRepository {
         if (currentCourseSource != null) {
             observableCourses.removeSource(currentCourseSource);
         }
-        currentCourseSource = (activeTimetableId != null)
-                ? courseDao.observeByTimetable(activeTimetableId)
+        Long ttId = activeTimetableId.getValue();
+        currentCourseSource = (ttId != null)
+                ? courseDao.observeByTimetable(ttId)
                 : courseDao.observeUnassigned(activeSemesterId);
         observableCourses.addSource(currentCourseSource, observableCourses::setValue);
     }
@@ -86,15 +88,17 @@ public class CourseRepository {
         final LiveData<List<SessionExceptionEntity>> exceptionsSource = exceptionDao.observeAll();
 
         result.addSource(sessionsSource, sessions ->
-                result.setValue(combine(sessions, exceptionsSource.getValue(), weekNo)));
+                result.setValue(combine(sessions, exceptionsSource.getValue(), weekNo, activeTimetableId.getValue())));
         result.addSource(exceptionsSource, exceptions ->
-                result.setValue(combine(sessionsSource.getValue(), exceptions, weekNo)));
+                result.setValue(combine(sessionsSource.getValue(), exceptions, weekNo, activeTimetableId.getValue())));
+        result.addSource(activeTimetableId, ttId ->
+                result.setValue(combine(sessionsSource.getValue(), exceptionsSource.getValue(), weekNo, ttId)));
         return result;
     }
 
     private List<DisplaySession> combine(List<SessionWithCourse> sessions,
                                          List<SessionExceptionEntity> exceptions,
-                                         int weekNo) {
+                                         int weekNo, Long ttId) {
         List<DisplaySession> out = new ArrayList<>();
         if (sessions == null) return out;
         Map<Long, SessionExceptionEntity> exMap = new HashMap<>();
@@ -106,8 +110,8 @@ public class CourseRepository {
         for (SessionWithCourse s : sessions) {
             if (s.semesterId != activeSemesterId) continue;
             if (!WeekUtils.matchesWeek(s.weekPattern, weekNo)) continue;
-            if (activeTimetableId != null) {
-                if (s.timetableId == null || s.timetableId != activeTimetableId) continue;
+            if (ttId != null) {
+                if (s.timetableId == null || s.timetableId != ttId) continue;
             } else {
                 if (s.timetableId != null) continue;
             }
@@ -126,6 +130,9 @@ public class CourseRepository {
 
     public void saveCourse(final CourseEntity course, final List<CourseSessionEntity> sessions,
                            final OnCourseSaved callback) {
+        if (course.timetableId == null) {
+            throw new IllegalArgumentException("course.timetableId must not be null");
+        }
         io.execute(() -> db.runInTransaction(() -> {
             long newId = courseDao.insert(course);
             for (CourseSessionEntity s : sessions) {
@@ -137,12 +144,34 @@ public class CourseRepository {
     }
 
     public void updateCourse(final CourseEntity course, final List<CourseSessionEntity> sessions) {
+        updateCourse(course, sessions, null);
+    }
+
+    public void updateCourse(final CourseEntity course, final List<CourseSessionEntity> sessions,
+                             final Runnable onSaved) {
         io.execute(() -> db.runInTransaction(() -> {
             courseDao.update(course);
-            sessionDao.deleteByCourse(course.id);
+            List<CourseSessionEntity> existing = sessionDao.listByCourse(course.id);
+            java.util.Set<Long> keptIds = new java.util.HashSet<>();
             for (CourseSessionEntity s : sessions) {
                 s.courseId = course.id;
-                sessionDao.insert(s);
+                if (s.id > 0) {
+                    sessionDao.update(s);
+                    keptIds.add(s.id);
+                } else {
+                    long newId = sessionDao.insert(s);
+                    s.id = newId;
+                    keptIds.add(newId);
+                }
+            }
+            for (CourseSessionEntity e : existing) {
+                if (!keptIds.contains(e.id)) {
+                    sessionDao.delete(e);
+                }
+            }
+            if (onSaved != null) {
+                android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+                mainHandler.post(onSaved);
             }
         }));
     }

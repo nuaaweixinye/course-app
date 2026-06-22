@@ -28,6 +28,7 @@ import com.courseshedule.data.imports.TimetableImporter;
 import com.courseshedule.data.local.AppDatabase;
 import com.courseshedule.data.local.entity.CourseEntity;
 import com.courseshedule.data.local.entity.CourseSessionEntity;
+import com.courseshedule.data.local.entity.TimetableEntity;
 import com.courseshedule.data.repository.CourseRepository;
 import com.courseshedule.data.repository.SemesterRepository;
 import com.courseshedule.databinding.ActivityImportBinding;
@@ -203,6 +204,11 @@ public class ImportActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.import_hint, Toast.LENGTH_SHORT).show();
             return;
         }
+        TimetableEntity active = db.timetableDao().getActiveGlobal();
+        if (active == null) {
+            Toast.makeText(this, R.string.hint_create_timetable_first, Toast.LENGTH_SHORT).show();
+            return;
+        }
         int count = 0;
         for (int i = 0; i < checkBoxes.size(); i++) {
             if (!checkBoxes.get(i).isChecked()) continue;
@@ -211,6 +217,8 @@ public class ImportActivity extends AppCompatActivity {
             course.name = c.name;
             course.teacher = c.teacher == null ? "" : c.teacher;
             course.colorTag = ColorPalette.defaultTag(count);
+            course.timetableId = active.id;
+            course.semesterId = active.semesterId;
             List<CourseSessionEntity> sessions = new ArrayList<>();
             for (com.courseshedule.data.imports.ParsedSession ps : c.sessions) {
                 CourseSessionEntity s = new CourseSessionEntity();

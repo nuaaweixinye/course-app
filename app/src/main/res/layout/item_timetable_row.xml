@@ -19,6 +19,13 @@
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
         <TextView
+            android:id="@+id/tvSemesterName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <TextView
             android:id="@+id/tvCourseCount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

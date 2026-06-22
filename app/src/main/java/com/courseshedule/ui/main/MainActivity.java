@@ -15,7 +15,9 @@ import androidx.lifecycle.ViewModelProvider;
 import com.courseshedule.App;
 import com.courseshedule.R;
 import com.courseshedule.data.repository.SemesterRepository;
+import com.courseshedule.data.repository.TimetableRepository;
 import com.courseshedule.databinding.ActivityMainBinding;
+import com.courseshedule.ui.manage.TimetableManageActivity;
 import com.courseshedule.ui.settings.SettingsActivity;
 
 import java.text.SimpleDateFormat;
@@ -45,7 +47,17 @@ public class MainActivity extends AppCompatActivity {
         binding.toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.action_add_course) {
-                startActivity(new Intent(this, com.courseshedule.ui.course.CourseEditActivity.class));
+                try {
+                    if (viewModel.hasActiveTimetable()) {
+                        startActivity(new Intent(this, com.courseshedule.ui.course.CourseEditActivity.class));
+                    } else {
+                        startActivity(new Intent(this, TimetableManageActivity.class));
+                        Toast.makeText(this, R.string.hint_create_timetable_first, Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    startActivity(new Intent(this, TimetableManageActivity.class));
+                    Toast.makeText(this, R.string.hint_create_timetable_first, Toast.LENGTH_SHORT).show();
+                }
                 return true;
             } else if (id == R.id.action_this_week) {
                 viewModel.jumpToCurrentWeek();
@@ -60,15 +72,16 @@ public class MainActivity extends AppCompatActivity {
         binding.btnPrevWeek.setOnClickListener(v -> viewModel.shiftWeek(-1));
         binding.btnNextWeek.setOnClickListener(v -> viewModel.shiftWeek(1));
 
+        binding.etWeek.setFocusable(false);
+        binding.etWeek.setClickable(true);
+        binding.etWeek.setOnClickListener(v -> showWeekPickerDialog());
+
         binding.etWeek.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
                 applyWeekInput();
                 return true;
             }
             return false;
-        });
-        binding.etWeek.setOnFocusChangeListener((v, hasFocus) -> {
-            if (!hasFocus) applyWeekInput();
         });
 
         binding.bottomNav.setSelectedItemId(R.id.tab_timetable);
@@ -174,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
             if (name != null) {
                 binding.tvActiveTimetable.setText(name);
             } else {
-                binding.tvActiveTimetable.setText(R.string.timetable_unassigned);
+                binding.tvActiveTimetable.setText(R.string.no_active_timetable);
             }
         });
     }
@@ -193,6 +206,31 @@ public class MainActivity extends AppCompatActivity {
         if (applied != null) binding.etWeek.setText(String.valueOf(applied));
         binding.etWeek.clearFocus();
         hideKeyboard();
+    }
+
+    private void showWeekPickerDialog() {
+        com.courseshedule.data.local.entity.SemesterEntity sem = viewModel.getActiveSemester().getValue();
+        int total = sem != null ? sem.totalWeeks : 16;
+        Integer current = viewModel.getSelectedWeek().getValue();
+        int currentWeek = current != null ? current : 1;
+
+        String[] labels = new String[total];
+        String suffix = getString(R.string.label_this_week_suffix);
+        for (int i = 0; i < total; i++) {
+            int w = i + 1;
+            labels[i] = "第" + w + "周";
+            if (w == currentWeek) {
+                labels[i] += " " + suffix;
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_select_week)
+                .setItems(labels, (d, which) -> {
+                    int weekNo = which + 1;
+                    viewModel.setSelectedWeek(weekNo);
+                })
+                .show();
     }
 
     private void hideKeyboard() {
@@ -222,7 +260,12 @@ public class MainActivity extends AppCompatActivity {
         currentGrid = null;
         if (sessions == null || sessions.isEmpty()) {
             TextView empty = new TextView(this);
-            empty.setText(R.string.empty_timetable);
+            String ttName = viewModel.getActiveTimetableName().getValue();
+            if (ttName == null) {
+                empty.setText(R.string.no_active_timetable);
+            } else {
+                empty.setText(R.string.empty_timetable);
+            }
             empty.setGravity(android.view.Gravity.CENTER);
             empty.setPadding(0, 200, 0, 0);
             empty.setTextColor(com.google.android.material.color.MaterialColors.getColor(

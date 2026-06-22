@@ -61,22 +61,34 @@ public class CourseEditViewModel extends AndroidViewModel {
 
     /** Returns null on success, or an error string resource id on validation failure. */
     public Integer save(CourseEntity course, List<CourseSessionEntity> sessions) {
+        return save(course, sessions, null);
+    }
+
+    public Integer save(CourseEntity course, List<CourseSessionEntity> sessions, Runnable onSaved) {
         if (course.name == null || course.name.trim().isEmpty()) {
             return com.courseshedule.R.string.err_name_required;
+        }
+        if (course.timetableId == null) {
+            return com.courseshedule.R.string.err_no_timetable;
         }
         if (sessions == null || sessions.isEmpty()) {
             return com.courseshedule.R.string.err_no_sessions;
         }
         for (CourseSessionEntity s : sessions) {
+            if (s.startPeriod < 1 || s.endPeriod > 12) {
+                return com.courseshedule.R.string.err_periods_out_of_range;
+            }
             if (s.endPeriod < s.startPeriod) {
                 return com.courseshedule.R.string.err_periods_invalid;
             }
         }
         if (mode == MODE_CREATE) {
-            repository.saveCourse(course, sessions, null);
+            repository.saveCourse(course, sessions, id -> {
+                if (onSaved != null) onSaved.run();
+            });
         } else {
             course.id = courseId;
-            repository.updateCourse(course, sessions);
+            repository.updateCourse(course, sessions, onSaved);
         }
         return null;
     }

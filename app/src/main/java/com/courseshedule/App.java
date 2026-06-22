@@ -20,7 +20,7 @@ public class App extends Application {
         super.onCreate();
         database = AppDatabase.get(this);
         new ThemePrefs(this).applyCurrent();
-        new SemesterRepository(database).loadAsync(null);
+        new SemesterRepository(database).repairDuplicateActive();
     }
 
     public AppDatabase getDatabase() {

@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.Transformations;
 
 import com.courseshedule.App;
@@ -33,6 +34,9 @@ public class MainViewModel extends AndroidViewModel {
     private final MediatorLiveData<TimetableEntity> activeTimetable = new MediatorLiveData<>();
     private final LiveData<String> activeTimetableName;
     private LiveData<TimetableEntity> activeTtSource;
+    private LiveData<SemesterEntity> activeSemesterSource;
+    private Observer<TimetableEntity> ttObserver;
+    private Observer<SemesterEntity> semObserver;
     private int currentWeek = 1;
     private final java.util.List<com.courseshedule.data.model.PeriodTime> periodTimes = new java.util.ArrayList<>();
 
@@ -53,25 +57,40 @@ public class MainViewModel extends AndroidViewModel {
         activeTimetableName = Transformations.map(activeTimetable, tt ->
                 tt != null ? tt.name : null);
 
-        observeActiveTimetableForSemester(cfg.id);
+        activeTtSource = timetableRepository.observeActiveGlobal();
+        ttObserver = tt -> {
+            activeTimetable.setValue(tt);
+            courseRepository.setActiveTimetableId(tt != null ? tt.id : null);
+        };
+        activeTtSource.observeForever(ttObserver);
 
-        if (!SemesterRepository.isCached()) {
-            semesterRepository.loadAsync(() -> {
-                SemesterEntity real = semesterRepository.getCachedOrDefault();
-                onSemesterChanged(real);
-            });
+        activeSemesterSource = semesterRepository.observeActive();
+        semObserver = this::onDbSemesterChanged;
+        activeSemesterSource.observeForever(semObserver);
+    }
+
+    private void onDbSemesterChanged(SemesterEntity sem) {
+        if (sem == null) return;
+        SemesterEntity current = activeSemester.getValue();
+        boolean idChanged = current == null || sem.id != current.id;
+        boolean fieldsChanged = current != null && (
+                sem.startDate != current.startDate ||
+                sem.totalWeeks != current.totalWeeks ||
+                !java.util.Objects.equals(sem.periodTimesJson, current.periodTimesJson));
+        if (idChanged || fieldsChanged) {
+            onSemesterChanged(sem);
         }
     }
 
-    private void observeActiveTimetableForSemester(long semesterId) {
-        if (activeTtSource != null) {
-            activeTimetable.removeSource(activeTtSource);
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        if (activeTtSource != null && ttObserver != null) {
+            activeTtSource.removeObserver(ttObserver);
         }
-        activeTtSource = timetableRepository.observeActive(semesterId);
-        activeTimetable.addSource(activeTtSource, tt -> {
-            activeTimetable.setValue(tt);
-            courseRepository.setActiveTimetableId(tt != null ? tt.id : null);
-        });
+        if (activeSemesterSource != null && semObserver != null) {
+            activeSemesterSource.removeObserver(semObserver);
+        }
     }
 
     private void applyConfig(SemesterEntity cfg) {
@@ -86,7 +105,6 @@ public class MainViewModel extends AndroidViewModel {
         applyConfig(semester);
         activeSemester.postValue(semester);
         selectedWeek.postValue(currentWeek);
-        observeActiveTimetableForSemester(semester.id);
     }
 
     public LiveData<SemesterEntity> getActiveSemester() {
@@ -151,6 +169,10 @@ public class MainViewModel extends AndroidViewModel {
 
     public void batchMoveCourses(java.util.List<Long> courseIds, long targetTimetableId) {
         courseRepository.batchMoveCourses(courseIds, targetTimetableId);
+    }
+
+    public boolean hasActiveTimetable() {
+        return activeTimetable.getValue() != null;
     }
 
     public static class Factory extends androidx.lifecycle.ViewModelProvider.NewInstanceFactory {

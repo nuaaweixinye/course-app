@@ -1,7 +1,6 @@
 package com.courseshedule.ui.manage;
 
 import android.app.DatePickerDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -50,7 +49,7 @@ public class SemesterManageActivity extends AppCompatActivity {
 
         repository.observeAll().observe(this, semesters -> {
             binding.semesterList.setLayoutManager(new LinearLayoutManager(this));
-            binding.semesterList.setAdapter(new SemesterAdapter(semesters, this::onItemClick, this::openTimetableManage));
+            binding.semesterList.setAdapter(new SemesterAdapter(semesters, this::onItemClick));
         });
     }
 
@@ -58,14 +57,10 @@ public class SemesterManageActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(semester.name)
                 .setItems(new String[]{
-                        semester.isActive ? getString(R.string.action_edit) : getString(R.string.action_set_active),
                         getString(R.string.action_edit),
                         getString(R.string.action_delete)
                 }, (d, which) -> {
                     if (which == 0) {
-                        if (semester.isActive) promptEditDetails(semester);
-                        else setActive(semester);
-                    } else if (which == 1) {
                         promptEditDetails(semester);
                     } else {
                         promptDelete(semester);
@@ -73,12 +68,6 @@ public class SemesterManageActivity extends AppCompatActivity {
                 })
                 .setNegativeButton(R.string.action_cancel, null)
                 .show();
-    }
-
-    private void openTimetableManage(SemesterEntity semester) {
-        startActivity(new Intent(this, TimetableManageActivity.class)
-                .putExtra(TimetableManageActivity.EXTRA_SEMESTER_ID, semester.id)
-                .putExtra(TimetableManageActivity.EXTRA_SEMESTER_NAME, semester.name));
     }
 
     private void setActive(SemesterEntity semester) {
@@ -98,7 +87,6 @@ public class SemesterManageActivity extends AppCompatActivity {
                     repository.create(name,
                             PeriodUtils.mondayOfDay(System.currentTimeMillis()), 16,
                             id -> {
-                                repository.switchTo(id);
                                 runOnUiThread(() ->
                                     Toast.makeText(this, R.string.toast_semester_created, Toast.LENGTH_SHORT).show());
                             });
@@ -175,15 +163,12 @@ public class SemesterManageActivity extends AppCompatActivity {
     private static class SemesterAdapter extends RecyclerView.Adapter<SemesterAdapter.ViewHolder> {
         private List<SemesterEntity> list;
         private final OnItemClick listener;
-        private final OnTimetableClick ttListener;
 
         interface OnItemClick { void onItemClick(SemesterEntity semester); }
-        interface OnTimetableClick { void onTimetableClick(SemesterEntity semester); }
 
-        SemesterAdapter(List<SemesterEntity> list, OnItemClick listener, OnTimetableClick ttListener) {
+        SemesterAdapter(List<SemesterEntity> list, OnItemClick listener) {
             this.list = list;
             this.listener = listener;
-            this.ttListener = ttListener;
         }
 
         @NonNull @Override
@@ -200,20 +185,17 @@ public class SemesterManageActivity extends AppCompatActivity {
             h.tvInfo.setText(s.isActive ? "\u2713 " + h.itemView.getContext().getString(R.string.label_active) : "");
             h.tvDate.setText(dateFmt.format(new Date(s.startDate)));
             h.itemView.setOnClickListener(v -> listener.onItemClick(s));
-            h.btnTt.setOnClickListener(v -> ttListener.onTimetableClick(s));
         }
 
         @Override public int getItemCount() { return list.size(); }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvInfo, tvDate;
-            android.widget.Button btnTt;
             ViewHolder(@NonNull View v) {
                 super(v);
                 tvName = v.findViewById(R.id.tvSemesterName);
                 tvInfo = v.findViewById(R.id.tvSemesterInfo);
                 tvDate = v.findViewById(R.id.tvSemesterDate);
-                btnTt = v.findViewById(R.id.btnManageTimetables);
             }
         }
     }

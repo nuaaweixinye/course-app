@@ -1,6 +1,5 @@
 package com.courseshedule.ui.settings;
 
-import android.app.DatePickerDialog;
 import android.app.AlertDialog;
 import android.net.Uri;
 import android.content.Intent;
@@ -21,19 +20,12 @@ import com.courseshedule.databinding.ActivitySettingsBinding;
 import com.courseshedule.ui.common.ThemePrefs;
 import com.courseshedule.ui.common.ExportUtil;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-
 public class SettingsActivity extends AppCompatActivity {
 
     private ActivitySettingsBinding binding;
     private SemesterRepository configRepository;
     private SemesterEntity config;
     private ThemePrefs themePrefs;
-    private final SimpleDateFormat dateFmt =
-            new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
     private final ActivityResultLauncher<String> createDocLauncher =
             registerForActivityResult(new ActivityResultContracts.CreateDocument("text/csv"),
@@ -53,17 +45,10 @@ public class SettingsActivity extends AppCompatActivity {
 
         loadConfig();
 
-        binding.btnSemesterStart.setOnClickListener(v -> pickSemesterStart());
         binding.btnManageSemesters.setOnClickListener(v ->
                 startActivity(new Intent(this, com.courseshedule.ui.manage.SemesterManageActivity.class)));
-        binding.btnManageTimetables.setOnClickListener(v -> {
-            configRepository.loadAsync(() -> {
-                com.courseshedule.data.local.entity.SemesterEntity active = configRepository.getCachedOrDefault();
-                runOnUiThread(() -> startActivity(new Intent(this, com.courseshedule.ui.manage.TimetableManageActivity.class)
-                        .putExtra(com.courseshedule.ui.manage.TimetableManageActivity.EXTRA_SEMESTER_ID, active.id)
-                        .putExtra(com.courseshedule.ui.manage.TimetableManageActivity.EXTRA_SEMESTER_NAME, active.name)));
-            });
-        });
+        binding.btnManageTimetables.setOnClickListener(v ->
+                startActivity(new Intent(this, com.courseshedule.ui.manage.TimetableManageActivity.class)));
         binding.btnEditPeriods.setOnClickListener(v -> editPeriods());
         binding.btnExport.setOnClickListener(v -> createDocLauncher.launch("course_export.csv"));
         binding.btnImportHelp.setOnClickListener(v ->
@@ -78,37 +63,10 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void loadConfig() {
         config = configRepository.getCachedOrDefault();
-        binding.btnSemesterStart.setText(
-                getString(R.string.label_semester_start) + ": " + dateFmt.format(new Date(config.startDate)));
-        binding.etTotalWeeks.setText(String.valueOf(config.totalWeeks));
     }
 
     private void saveConfig() {
-        int weeks = parseTotalWeeks();
-        config.totalWeeks = weeks;
         configRepository.update(config);
-    }
-
-    private int parseTotalWeeks() {
-        try {
-            return Integer.parseInt(binding.etTotalWeeks.getText().toString().trim());
-        } catch (NumberFormatException e) {
-            return SemesterEntity.DEFAULT_TOTAL_WEEKS;
-        }
-    }
-
-    private void pickSemesterStart() {
-        Calendar c = Calendar.getInstance();
-        c.setTimeInMillis(config.startDate);
-        new DatePickerDialog(this, (view, year, month, day) -> {
-            Calendar picked = Calendar.getInstance();
-            picked.set(year, month, day);
-            config.startDate = com.courseshedule.data.model.PeriodUtils.mondayOfDay(
-                    picked.getTimeInMillis());
-            saveConfig();
-            binding.btnSemesterStart.setText(
-                    getString(R.string.label_semester_start) + ": " + dateFmt.format(new Date(config.startDate)));
-        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
     private void editPeriods() {
@@ -151,11 +109,5 @@ public class SettingsActivity extends AppCompatActivity {
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
             });
         }).start();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (config != null) saveConfig();
     }
 }

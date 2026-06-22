@@ -45,6 +45,12 @@ public interface SemesterDao {
     @Query("UPDATE semesters SET isActive = 1 WHERE id = :id")
     void setActive(long id);
 
+    @Query("SELECT * FROM semesters WHERE isActive = 1 ORDER BY id ASC")
+    List<SemesterEntity> getAllActive();
+
+    @Query("UPDATE semesters SET isActive = 0 WHERE id != :keepId AND isActive = 1")
+    void deactivateAllExcept(long keepId);
+
     @Query("SELECT * FROM semesters ORDER BY startDate DESC")
     java.util.List<SemesterEntity> listAll();
 }
